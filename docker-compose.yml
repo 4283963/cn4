@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: arm-audit-db
+    environment:
+      POSTGRES_DB: arm_audit
+      POSTGRES_USER: arm_audit
+      POSTGRES_PASSWORD: arm_audit_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arm_audit"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: arm-audit-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/arm_audit
+      SPRING_DATASOURCE_USERNAME: arm_audit
+      SPRING_DATASOURCE_PASSWORD: arm_audit_pass
+      AUDIT_PYTHON_EXECUTABLE: python3
+      AUDIT_PYTHON_SCRIPT_PATH: /app/python/anomaly_detector.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src/main/python:/app/python
+
+volumes:
+  pgdata:

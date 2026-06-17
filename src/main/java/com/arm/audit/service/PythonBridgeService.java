@@ -13,7 +13,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Slf4j
 @Service
@@ -50,6 +50,21 @@ public class PythonBridgeService {
 
             Process process = pb.start();
 
+            CompletableFuture<String> outputFuture = CompletableFuture.supplyAsync(() -> {
+                try (InputStream is = process.getInputStream();
+                     BufferedReader reader = new BufferedReader(
+                             new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    return sb.toString();
+                } catch (IOException e) {
+                    throw new CompletionException("Failed to read Python output", e);
+                }
+            });
+
             try (OutputStream os = process.getOutputStream()) {
                 os.write(jsonInput.getBytes(StandardCharsets.UTF_8));
                 os.flush();
@@ -61,20 +76,11 @@ public class PythonBridgeService {
 
             if (!finished) {
                 process.destroyForcibly();
+                outputFuture.cancel(true);
                 throw new RuntimeException("Python analysis timed out");
             }
 
-            String output;
-            try (InputStream is = process.getInputStream();
-                 BufferedReader reader = new BufferedReader(
-                         new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
-                }
-                output = sb.toString();
-            }
+            String output = outputFuture.get(10, TimeUnit.SECONDS);
 
             int exitCode = process.exitValue();
             if (exitCode != 0) {
@@ -84,6 +90,8 @@ public class PythonBridgeService {
 
             return objectMapper.readTree(output);
 
+        } catch (CompletionException e) {
+            throw new RuntimeException(e.getCause().getMessage(), e.getCause());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

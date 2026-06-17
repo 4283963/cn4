@@ -11,5 +11,13 @@ public class PythonConfig {
 
     private String executable = "python3";
     private String scriptPath = "src/main/python/anomaly_detector.py";
-    private long timeoutSeconds = 30;
+    private long timeoutSeconds = 45;
+    private LlmConfig llm = new LlmConfig();
+
+    @Data
+    public static class LlmConfig {
+        private String apiBase = "https://api.openai.com/v1";
+        private String apiKey = "";
+        private String model = "gpt-4o-mini";
+    }
 }

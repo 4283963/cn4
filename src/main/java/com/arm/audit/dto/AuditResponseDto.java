@@ -19,6 +19,7 @@ public class AuditResponseDto {
     private Double collisionRiskScore;
     private Double jitterScore;
     private List<AnomalyDetail> anomalies;
+    private String rootCauseAnalysis;
     private String message;
 
     @Data

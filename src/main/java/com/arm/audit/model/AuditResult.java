@@ -38,6 +38,9 @@ public class AuditResult {
     @Column(length = 2000)
     private String details;
 
+    @Column(length = 2000)
+    private String rootCauseAnalysis;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

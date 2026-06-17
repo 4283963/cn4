@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS audit_results (
     collision_risk_score  DOUBLE,
     jitter_score          DOUBLE,
     details               VARCHAR(2000),
+    root_cause_analysis   VARCHAR(2000),
     created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_audit_results_session_id ON audit_results(session_id);
+
+ALTER TABLE audit_results ADD COLUMN IF NOT EXISTS root_cause_analysis VARCHAR(2000);

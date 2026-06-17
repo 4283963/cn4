@@ -48,6 +48,20 @@ public class PythonBridgeService {
             );
             pb.redirectErrorStream(true);
 
+            Map<String, String> env = pb.environment();
+            PythonConfig.LlmConfig llm = pythonConfig.getLlm();
+            if (llm != null) {
+                if (llm.getApiBase() != null && !llm.getApiBase().isEmpty()) {
+                    env.put("LLM_API_BASE", llm.getApiBase());
+                }
+                if (llm.getApiKey() != null && !llm.getApiKey().isEmpty()) {
+                    env.put("LLM_API_KEY", llm.getApiKey());
+                }
+                if (llm.getModel() != null && !llm.getModel().isEmpty()) {
+                    env.put("LLM_MODEL", llm.getModel());
+                }
+            }
+
             Process process = pb.start();
 
             CompletableFuture<String> outputFuture = CompletableFuture.supplyAsync(() -> {

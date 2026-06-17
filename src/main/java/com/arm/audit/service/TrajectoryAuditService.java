@@ -92,6 +92,12 @@ public class TrajectoryAuditService {
             }
         }
 
+        String rootCause = null;
+        JsonNode rootCauseNode = result.path("root_cause_analysis");
+        if (!rootCauseNode.isNull() && !rootCauseNode.asText().isEmpty()) {
+            rootCause = rootCauseNode.asText();
+        }
+
         String message;
         if (!hasCollisionRisk && !hasJitterAnomaly) {
             message = "轨迹正常，未检测到碰撞风险或抖动异常";
@@ -109,6 +115,7 @@ public class TrajectoryAuditService {
                 .collisionRiskScore(collisionScore)
                 .jitterScore(jitterScore)
                 .anomalies(anomalies)
+                .rootCauseAnalysis(rootCause)
                 .message(message)
                 .build();
     }
@@ -123,6 +130,15 @@ public class TrajectoryAuditService {
             }
         }
 
+        String rootCause = null;
+        JsonNode rootCauseNode = result.path("root_cause_analysis");
+        if (!rootCauseNode.isNull() && !rootCauseNode.asText().isEmpty()) {
+            rootCause = rootCauseNode.asText();
+            if (rootCause.length() > 2000) {
+                rootCause = rootCause.substring(0, 1997) + "...";
+            }
+        }
+
         AuditResult auditResult = AuditResult.builder()
                 .sessionId(sessionId)
                 .hasCollisionRisk(result.path("has_collision_risk").asBoolean(false))
@@ -130,6 +146,7 @@ public class TrajectoryAuditService {
                 .collisionRiskScore(result.path("collision_risk_score").asDouble(0.0))
                 .jitterScore(result.path("jitter_score").asDouble(0.0))
                 .details(details)
+                .rootCauseAnalysis(rootCause)
                 .build();
 
         auditResultRepository.save(auditResult);
